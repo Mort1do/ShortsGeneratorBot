@@ -34,17 +34,21 @@ def callBackHandler(callback):
     else:
         print("CALLBACK ERROR")
 
+
 createVideoCBStates = {}
 def createVideoCallBackHandler(callback):
+
     #bot.send_message(callback.from_user.id, "Here will be creating of video by prompt")
     userId = callback.from_user.id
     createVideoCBStates[userId] = "WaitingTheOption"
+
     markupCreateVideo = types.ReplyKeyboardMarkup()
     btn1 = types.KeyboardButton("/Stable_AI")
     btn2 = types.KeyboardButton("Заглушка 1")
     btn3 = types.KeyboardButton("Заглушка 2")
     markupCreateVideo.row(btn1)
     markupCreateVideo.row(btn2, btn3)
+
     bot.send_message(userId, "Выберите нейронку для генерации видео:", reply_markup=markupCreateVideo)
 
 @bot.message_handler(commands=['Stable_AI'])
@@ -72,9 +76,34 @@ def stableAIHandler(message):
 
 
 
-
+accountsStates = {}
 def accountCallBackHanlder(callback):
-    bot.send_message(callback.from_user.id, "Here will be a list of accounts")
+
+    userId = callback.from_user.id
+    accountStates[userId] = "WaitingTheOption"
+
+    markupAccounts = types.ReplyKeyboardMarkup()
+    btn1 = types.KeyboardButton("/AddAccount")
+    btn2 = types.KeyboardButton("/ViewAccountsList")
+    btn3 = types.KeyboardButton("?Создать аккаунт?")
+    btn4 = types.KeyboardButton("?Выбрать аккаунт?")
+    markupAccounts.row(btn1, btn2)
+    markupAccounts.row(btn3, btn4)
+
+    bot.send_message(userId, "Настройка аккаунтов:", reply_markup=markupAccounts)
+
+@bot.message_handler(commands=['AddAccount'])
+def addingAccountHandler(message):
+
+    if accountsStates[message.from_user.id] == "WaitingTheOption":
+        markupAccount = types.InlineKeyboardMarkup()
+        btn1 = types.InlineKeyboardButton("<<", callback_data="CreateVideoCallBack")
+        btn2 = types.InlineKeyboardButton("Аккаунты", callback_data="AccountsCallBack")
+        btn3 = types.InlineKeyboardButton(">>", callback_data="WatchingCallBack")
+        markupMain.row(btn1, btn3)
+        markupMain.row(btn2)
+        bot.reply_to(message, "Добро пожаловать!", reply_markup=markupMain)
+
 
 def watchingCallBackHandler(callback):
     bot.send_message(callback.from_user.id, "Here will be the panel with generated videoes")
