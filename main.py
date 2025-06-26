@@ -1,14 +1,23 @@
+from API import API
 import telebot
 from telebot import types
 
 bot = telebot.TeleBot("8028982090:AAFZcLixJ8lkAgohXugaou4kUal1skT1QZs")
 
+#userId = 0
+
 @bot.message_handler(commands=['start'])
 def start(message):
+
+    #Init userID
+    #userId = message.from_user.id
+
     markupMain = types.InlineKeyboardMarkup()
-    markupMain.add(types.InlineKeyboardButton("Создать видео", callback_data="CreateVideoCallBack"))
-    markupMain.add(types.InlineKeyboardButton("Аккаунты", callback_data="AccountsCallBack"))
-    markupMain.add(types.InlineKeyboardButton("Просмотр видео", callback_data="WatchingCallBack"))
+    btn1 = types.InlineKeyboardButton("Создать видео", callback_data="CreateVideoCallBack")
+    btn2 = types.InlineKeyboardButton("Аккаунты", callback_data="AccountsCallBack")
+    btn3 = types.InlineKeyboardButton("Просмотр видео", callback_data="WatchingCallBack")
+    markupMain.row(btn1, btn3)
+    markupMain.row(btn2)
     bot.reply_to(message, "Добро пожаловать!", reply_markup=markupMain)
 
 @bot.callback_query_handler(func=lambda callback: True)
@@ -25,15 +34,44 @@ def callBackHandler(callback):
     else:
         print("CALLBACK ERROR")
 
+createVideoCBStates = {}
 def createVideoCallBackHandler(callback):
     #bot.send_message(callback.from_user.id, "Here will be creating of video by prompt")
+    userId = callback.from_user.id
+    createVideoCBStates[userId] = "WaitingTheOption"
     markupCreateVideo = types.ReplyKeyboardMarkup()
-    btn1 = types.KeyboardButton("Stable AI")
+    btn1 = types.KeyboardButton("/Stable_AI")
     btn2 = types.KeyboardButton("Заглушка 1")
     btn3 = types.KeyboardButton("Заглушка 2")
     markupCreateVideo.row(btn1)
     markupCreateVideo.row(btn2, btn3)
-    bot.send_message(callback.from_user.id, "Чё хочешь?", reply_markup=markupCreateVideo)
+    bot.send_message(userId, "Выберите нейронку для генерации видео:", reply_markup=markupCreateVideo)
+
+@bot.message_handler(commands=['Stable_AI'])
+def stableAIHandler(message):
+
+    userId = message.from_user.id
+
+    if createVideoCBStates[userId] == "WaitingTheOption":
+
+        createVideoCBStates[userId] = "WaitingPrompt"
+        bot.reply_to(message, "Введите промпт:")
+
+    elif createVideoCBStates[userId] == "WaitingPrompt":
+
+        createVideoCBStates[userId] = "WaitingResponse"
+        prompt = message.text
+
+        stableAI = API.StableAI(prompt)
+        stableAI.reqToGen()
+        stableAI.respToGen()
+
+    else:
+        print("Something went wrong on handling stableAI generator")
+
+
+
+
 
 def accountCallBackHanlder(callback):
     bot.send_message(callback.from_user.id, "Here will be a list of accounts")
