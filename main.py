@@ -82,7 +82,8 @@ accountsStates = {}
 def accountCallBackHanlder(callback):
 
     userId = callback.from_user.id
-    accountStates[userId] = "WaitingTheOption"
+    accountsStates[userId] = "WaitingTheOption"
+    addingAccountStates[userId] = "AddingUser"
 
     markupAccounts = types.ReplyKeyboardMarkup()
     btn1 = types.KeyboardButton("/AddAccount")
@@ -94,17 +95,65 @@ def accountCallBackHanlder(callback):
 
     bot.send_message(userId, "Настройка аккаунтов:", reply_markup=markupAccounts)
 
+@bot.message_handler(commands=['ViewAccountsList', '>>', '<<'])
+def viewAccountHandler(message):
+
+    if accountsStates[message.from_user.id] == "WaitingTheOption":
+        currentPosition = 0
+        accountsStates[message.from_user.id] = "Done"
+    elif message.text == ">>":
+        currentPosition = currentPosition + 1
+    elif message.text == "<<":
+        currentPosition = currentPosition - 1
+
+    markupAccount = types.ReplyKeyboardMarkup()
+    btn1 = types.KeyboardButton("/<<")
+    btn2 = types.KeyboardButton("/>>")
+    markupAccount.row(btn1, btn2)
+
+    acc = API.model.getAccByNum(currentPosition)
+    response = "Логин: " + acc.login + "\n" + "Пароль: " + acc.password + "\n" + "Эмейл: " + acc.email + "\n" + "Пароль эмейла: " + acc.email_password
+
+    bot.reply_to(message, response, reply_markup=markupAccount)
+
+addingAccountStates = {}
 @bot.message_handler(commands=['AddAccount'])
 def addingAccountHandler(message):
 
-    if accountsStates[message.from_user.id] == "WaitingTheOption":
-        markupAccount = types.InlineKeyboardMarkup()
-        btn1 = types.InlineKeyboardButton("<<", callback_data="CreateVideoCallBack")
-        btn2 = types.InlineKeyboardButton("Аккаунты", callback_data="AccountsCallBack")
-        btn3 = types.InlineKeyboardButton(">>", callback_data="WatchingCallBack")
-        markupMain.row(btn1, btn3)
-        markupMain.row(btn2)
-        bot.reply_to(message, "Добро пожаловать!", reply_markup=markupMain)
+    userId = message.from_user.id
+
+    if addingAccountStates[userId] == "AddingUser":
+        addingAccountStates[userId] = "WaitingLogin"
+        bot.reply_to(message, "Введите логин:")
+
+    elif addingAccountStates[userId] == "WaitingLogin":
+        login = message.text
+        addingAccountStates[userId] = "WaitingPassword"
+        bot.reply_to(message, "Введите пароль:")
+
+    elif addingAccountStates[userId] == "WaitingPassword":
+        password = message.text
+        addingAccountStates[userId] = "WaitingEmail"
+        bot.reply_to(message, "Введите email:")
+
+    elif addingAccountStates[userId] == "WaitingEmail":
+        email = message.text
+        addingAccountStates[userId] = "WaitingEmailPassword"
+        bot.reply_to(message, "Введите пароль от email:")
+
+    elif addingAccountStates[userId] == "WaitingEmailPassword":
+        emailPassword = message.text
+        addingAccountStates[userId] = "WaitingDescription"
+        bot.reply_to(message, "Введите описание аккаунта:")
+
+    elif addingAccountStates[userId] == "WaitingDescription":
+        description = message.text
+        addingAccountStates[userId] = "Done"
+        bot.reply_to(message, "Попытка добавления аккаунта...")
+        API.model.putAcc(login, password, email, emailPassword, description)
+
+    else:
+        bot.reply_to(message, "SOMETHING WENT WRONG")
 
 
 def watchingCallBackHandler(callback):

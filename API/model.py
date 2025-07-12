@@ -15,6 +15,7 @@ engine.connect()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 print(engine)
+print(type(SessionLocal))
 
 Base = declarative_base()
 
@@ -27,7 +28,6 @@ class Accounts(Base):
     email = Column(String, nullable=False)
     email_password = Column(String, nullable=False)
     description = Column(String)
-
 
 
 # ORM using DB
@@ -43,9 +43,9 @@ def getAllAcc():
         accounts = db.query(Accounts).all()
     return accounts
 
-def getAccById(id):
-    with getDb() as db:
-        account = db.query(Accounts).filter(Accounts.id == id).first()
+def getAccByNum(position):
+    with SessionLocal() as db:
+        account = db.query(Accounts).order_by(Accounts.id).offset(position).limit(1).first()
     return account
 
 def getAccByLogin(login):
