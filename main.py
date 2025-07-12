@@ -2,6 +2,8 @@ from API import API
 import telebot
 from telebot import types
 
+import API.model
+
 bot = telebot.TeleBot("8028982090:AAFZcLixJ8lkAgohXugaou4kUal1skT1QZs")
 
 #userId = 0
